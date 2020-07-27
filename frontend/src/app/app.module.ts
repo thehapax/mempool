@@ -1,9 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NgbButtonsModule, NgbPaginationModule, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -41,6 +39,7 @@ import { AssetsComponent } from './assets/assets.component';
 import { StatusViewComponent } from './components/status-view/status-view.component';
 import { MinerComponent } from './components/miner/miner.component';
 import { SharedModule } from './shared/shared.module';
+import { NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -76,12 +75,9 @@ import { SharedModule } from './shared/shared.module';
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    ReactiveFormsModule,
     BrowserAnimationsModule,
-    NgbButtonsModule,
-    NgbPaginationModule,
-    NgbDropdownModule,
     InfiniteScrollModule,
+    NgbTypeaheadModule,
     SharedModule,
   ],
   providers: [

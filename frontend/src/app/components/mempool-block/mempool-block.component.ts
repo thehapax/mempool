@@ -5,6 +5,7 @@ import { switchMap, map, tap, filter } from 'rxjs/operators';
 import { MempoolBlock } from 'src/app/interfaces/websocket.interface';
 import { Observable } from 'rxjs';
 import { SeoService } from 'src/app/services/seo.service';
+import { env } from 'src/app/app.constants';
 
 @Component({
   selector: 'app-mempool-block',
@@ -15,6 +16,7 @@ export class MempoolBlockComponent implements OnInit, OnDestroy {
   network = '';
   mempoolBlockIndex: number;
   mempoolBlock$: Observable<MempoolBlock>;
+  ordinal: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,12 +31,19 @@ export class MempoolBlockComponent implements OnInit, OnDestroy {
           this.mempoolBlockIndex = parseInt(params.get('id'), 10) || 0;
           return this.stateService.mempoolBlocks$
           .pipe(
+            map((blocks) => {
+              if (!blocks.length) {
+                return [{ index: 0, blockSize: 0, blockVSize: 0, feeRange: [0, 0], medianFee: 0, nTx: 0, totalFees: 0 }];
+              }
+              return blocks;
+            }),
             filter((mempoolBlocks) => mempoolBlocks.length > 0),
             map((mempoolBlocks) => {
               while (!mempoolBlocks[this.mempoolBlockIndex]) {
                 this.mempoolBlockIndex--;
               }
-              this.seoService.setTitle(this.getGetOrdinal());
+              this.setOrdinal(mempoolBlocks[this.mempoolBlockIndex]);
+              this.seoService.setTitle(this.ordinal);
               return mempoolBlocks[this.mempoolBlockIndex];
             })
           );
@@ -52,14 +61,16 @@ export class MempoolBlockComponent implements OnInit, OnDestroy {
     this.stateService.markBlock$.next({});
   }
 
-  getGetOrdinal() {
+  setOrdinal(mempoolBlock: MempoolBlock) {
+    const blocksInBlock = Math.ceil(mempoolBlock.blockVSize / 1000000);
     if (this.mempoolBlockIndex === 0) {
-      return 'Next block';
+      this.ordinal = 'Next block';
+    } else if (this.mempoolBlockIndex === env.KEEP_BLOCKS_AMOUNT - 1 && blocksInBlock > 1 ) {
+      this.ordinal = `Stack of ${blocksInBlock} blocks`;
+    } else {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = this.mempoolBlockIndex + 1 % 100;
+      this.ordinal = this.mempoolBlockIndex + 1 + (s[(v - 20) % 10] || s[v] || s[0]) + ' next block';
     }
-
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = this.mempoolBlockIndex + 1 % 100;
-    return this.mempoolBlockIndex + 1 + (s[(v - 20) % 10] || s[v] || s[0]) + ' next block';
  }
-
 }

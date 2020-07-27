@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Block, Transaction, Address, Outspend, Recent, Asset } from '../interfaces/electrs.interface';
 import { StateService } from './state.service';
+import { env } from '../app.constants';
 
 const API_BASE_URL = '{network}/api';
 
@@ -81,4 +82,7 @@ export class ElectrsApiService {
     return this.httpClient.get<Transaction[]>(this.apiBaseUrl + '/asset/' + assetId + '/txs/chain/' + txid);
   }
 
+  getAddressesByPrefix$(prefix: string): Observable<string[]> {
+    return this.httpClient.get<string[]>(this.apiBaseUrl + '/address-prefix/' + prefix);
+  }
 }

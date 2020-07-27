@@ -4,6 +4,7 @@ import { WebsocketResponse } from '../interfaces/websocket.interface';
 import { StateService } from './state.service';
 import { Block, Transaction } from '../interfaces/electrs.interface';
 import { Subscription } from 'rxjs';
+import { env } from '../app.constants';
 
 const WEB_SOCKET_PROTOCOL = (document.location.protocol === 'https:') ? 'wss:' : 'ws:';
 const WEB_SOCKET_URL = WEB_SOCKET_PROTOCOL + '//' + document.location.hostname + ':' + document.location.port + '{network}/api/v1/ws';
@@ -29,12 +30,12 @@ export class WebsocketService {
   constructor(
     private stateService: StateService,
   ) {
-    this.network = this.stateService.network === 'bisq' ? '' : this.stateService.network;
+    this.network = this.stateService.network === 'bisq' && !env.BISQ_SEPARATE_BACKEND ? '' : this.stateService.network;
     this.websocketSubject = webSocket<WebsocketResponse>(WEB_SOCKET_URL.replace('{network}', this.network ? '/' + this.network : ''));
     this.startSubscription();
 
     this.stateService.networkChanged$.subscribe((network) => {
-      if (network === 'bisq') {
+      if (network === 'bisq' && !env.BISQ_SEPARATE_BACKEND) {
         network = '';
       }
       if (network === this.network) {
@@ -52,22 +53,23 @@ export class WebsocketService {
 
       this.startSubscription();
     });
-
   }
 
   startSubscription(retrying = false) {
+    this.stateService.isLoadingWebSocket$.next(true);
     if (retrying) {
       this.stateService.connectionState$.next(1);
     }
     this.websocketSubject.next({'action': 'init'});
     this.subscription = this.websocketSubject
       .subscribe((response: WebsocketResponse) => {
+        this.stateService.isLoadingWebSocket$.next(false);
         if (response.blocks && response.blocks.length) {
           const blocks = response.blocks;
           blocks.forEach((block: Block) => {
             if (block.height > this.stateService.latestBlockHeight) {
               this.stateService.latestBlockHeight = block.height;
-              this.stateService.blocks$.next([block, false, true]);
+              this.stateService.blocks$.next([block, false]);
             }
           });
         }
@@ -79,7 +81,7 @@ export class WebsocketService {
         if (response.block) {
           if (response.block.height > this.stateService.latestBlockHeight) {
             this.stateService.latestBlockHeight = response.block.height;
-            this.stateService.blocks$.next([response.block, !!response.txConfirmed, false]);
+            this.stateService.blocks$.next([response.block, !!response.txConfirmed]);
           }
 
           if (response.txConfirmed) {
